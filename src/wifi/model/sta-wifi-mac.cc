@@ -450,40 +450,44 @@ StaWifiMac::SendAssociationRequest (void)
     }
 
 if (assocVaule < fastAssocThreshold)
-{
-  SetState (WAIT_ASSOC_RESP);
-  WifiMacHeader hdr;
-  hdr.SetAssocReq ();
-  hdr.SetAddr1 (GetBssid ());
-  hdr.SetAddr2 (GetAddress ());
-  hdr.SetAddr3 (GetBssid ());
-  hdr.SetDsNotFrom ();
-  hdr.SetDsNotTo ();
-  Ptr<Packet> packet = Create<Packet> ();
-  MgtAssocRequestHeader assoc;
-  assoc.SetSsid (GetSsid ());
-  assoc.SetSupportedRates (GetSupportedRates ());
-  if (m_htSupported)
-    {
-      assoc.SetHtCapabilities (GetHtCapabilities ());
-      hdr.SetNoOrder ();
-    }
+   {
+      SetState (WAIT_ASSOC_RESP);
+      WifiMacHeader hdr;
+      hdr.SetAssocReq ();
+      hdr.SetAddr1 (GetBssid ());
+      hdr.SetAddr2 (GetAddress ());
+      hdr.SetAddr3 (GetBssid ());
+      hdr.SetDsNotFrom ();
+      hdr.SetDsNotTo ();
+      Ptr<Packet> packet = Create<Packet> ();
+      MgtAssocRequestHeader assoc;
+      assoc.SetSsid (GetSsid ());
+      assoc.SetSupportedRates (GetSupportedRates ());
+      if (m_htSupported)
+         {
+    	    assoc.SetHtCapabilities (GetHtCapabilities ());
+    	    hdr.SetNoOrder ();
+         }
 
-  packet->AddHeader (assoc);
+      packet->AddHeader (assoc);
 
-  //The standard is not clear on the correct queue for management
-  //frames if we are a QoS AP. The approach taken here is to always
-  //use the DCF for these regardless of whether we have a QoS
-  //association or not.
-  m_dca->Queue (packet, hdr);
-}
+      //The standard is not clear on the correct queue for management
+      //frames if we are a QoS AP. The approach taken here is to always
+      //use the DCF for these regardless of whether we have a QoS
+      //association or not.
+      m_dca->Queue (packet, hdr);
 
-  if (m_assocRequestEvent.IsRunning ())
-    {
-      m_assocRequestEvent.Cancel ();
-    }
-  m_assocRequestEvent = Simulator::Schedule (m_assocRequestTimeout,
-                                           &StaWifiMac::AssocRequestTimeout, this);
+      if (m_assocRequestEvent.IsRunning ())
+         {
+    	    m_assocRequestEvent.Cancel ();
+         }
+      m_assocRequestEvent = Simulator::Schedule (m_assocRequestTimeout,
+                                       &StaWifiMac::AssocRequestTimeout, this);
+   }
+else
+   {
+	  SetState (BEACON_MISSED);
+   }
 }
 
 void
