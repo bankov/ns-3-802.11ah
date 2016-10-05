@@ -790,6 +790,81 @@ ApWifiMac::SendOneBeacon (void)
               AuthenThreshold += 1023 * value / m_nAssociating;
             }
         }
+      if (algorithm == 6)
+        {
+          if (m_cac_state == WAIT)
+            {
+              if (MgtQueueSize != 0)
+                {
+                  AuthenThreshold = 0;
+                  m_delta = 1;
+                  m_cac_improve = false;
+                  m_cac_counter = 5;
+                  m_cac_state = LEARN;
+                }
+              else
+                {
+                  AuthenThreshold = 1023;
+                }
+            }
+          else if (m_cac_state == LEARN)
+            {
+              if (MgtQueueSize == 0)
+                {
+                  if (AuthenThreshold == 1023)
+                    {
+                      m_cac_state = WAIT;
+                    }
+                  else
+                    {
+                      AuthenThreshold += m_delta;
+                      m_delta *= 2;
+                      m_cac_improve = true;
+                    }
+                }
+              else if (m_cac_improve)
+                {
+                  m_delta = std::max<int>(m_delta / 4, 1);
+                  AuthenThreshold -= m_delta;
+                  m_cac_state = WORK;
+                }
+            }
+          else // WORK state
+            {
+              if (AuthenThreshold == 1023)
+                {
+                  m_cac_counter--;
+                  if (m_cac_counter <= 0)
+                    {
+                      m_cac_state = WAIT;
+                    }
+                }
+              else if (MgtQueueSize == 0)
+                {
+                  if (m_cac_improve)
+                    {
+                      m_delta++;
+                    }
+                  AuthenThreshold += m_delta;
+                  if (AuthenThreshold >= 1023)
+                    {
+                      AuthenThreshold = 1023;
+                      m_cac_improve = false;
+                    }
+                }
+              else
+                {
+                  if (m_queueLast == 0)
+                    {
+                      if (m_cac_improve)
+                        {
+                          m_delta = std::max<int>(m_delta - 1, 1);
+                          m_cac_improve = false;
+                        }
+                    }
+                }
+            }
+        }
 
 	  if (AuthenThreshold>=1023)
 	    {
