@@ -861,7 +861,11 @@ WifiRemoteStationManager::NeedFragmentation (Mac48Address address, const WifiMac
       return false;
     }
   WifiRemoteStation *station = Lookup (address, header);
-  bool normally = (packet->GetSize () + header->GetSize () + WIFI_MAC_FCS_LENGTH) > GetFragmentationThreshold ();
+  bool normally = false;
+  if (packet)
+    {
+      normally = (packet->GetSize () + header->GetSize () + WIFI_MAC_FCS_LENGTH) > GetFragmentationThreshold ();
+    }
   NS_LOG_DEBUG ("WifiRemoteStationManager::NeedFragmentation result: " << std::boolalpha << normally);
   return DoNeedFragmentation (station, packet, normally);
 }
