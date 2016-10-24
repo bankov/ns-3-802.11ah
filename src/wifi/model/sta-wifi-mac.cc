@@ -129,7 +129,7 @@ StaWifiMac::StaWifiMac ()
   fasTAssocType = false; //centraied control
   fastAssocThreshold = 0; // allow some station to associate at the begining
     Ptr<UniformRandomVariable> m_rv = CreateObject<UniformRandomVariable> ();
-  assocVaule = m_rv->GetValue (0, 999);
+    assocVaule = m_rv->GetValue (0, 1022);
 
   //Let the lower layers know that we are acting as a non-AP STA in
   //an infrastructure BSS.
