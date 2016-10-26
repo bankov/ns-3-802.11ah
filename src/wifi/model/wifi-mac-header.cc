@@ -129,6 +129,13 @@ WifiMacHeader::SetAddr4 (Mac48Address address)
 }
 
 void
+WifiMacHeader::SetAuthFrame (void)
+{
+  m_ctrlType = TYPE_MGT;
+  m_ctrlSubtype = 11;
+}
+
+void
 WifiMacHeader::SetAssocReq (void)
 {
   m_ctrlType = TYPE_MGT;

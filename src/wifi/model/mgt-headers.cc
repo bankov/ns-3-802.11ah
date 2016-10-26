@@ -294,6 +294,110 @@ MgtBeaconHeader::GetTypeId (void)
   return tid;
 }
 
+/***********************************************************
+ *          Authentication frames
+ ***********************************************************/
+
+NS_OBJECT_ENSURE_REGISTERED (MgtAuthFrameHeader);
+
+MgtAuthFrameHeader::MgtAuthFrameHeader ()
+  : m_authAlgorithmNumber (0),
+	m_authTransactionSeqNumber (1)
+{
+}
+
+MgtAuthFrameHeader::~MgtAuthFrameHeader ()
+{
+}
+
+void
+MgtAuthFrameHeader::SetAuthAlgorithmNumber (uint16_t algorithm)
+{
+	m_authAlgorithmNumber = algorithm;
+}
+
+void
+MgtAuthFrameHeader::SetAuthTransactionSeqNumber (uint16_t transaction)
+{
+	m_authTransactionSeqNumber = transaction;
+}
+
+void
+MgtAuthFrameHeader::SetStatusCode (StatusCode code)
+{
+  m_code = code;
+}
+
+uint16_t
+MgtAuthFrameHeader::GetAuthAlgorithmNumber (void) const
+{
+	return m_authAlgorithmNumber;
+}
+
+uint16_t
+MgtAuthFrameHeader::GetAuthTransactionSeqNumber (void) const
+{
+	return m_authTransactionSeqNumber;
+}
+
+StatusCode
+MgtAuthFrameHeader::GetStatusCode (void)
+{
+  return m_code;
+}
+
+TypeId
+MgtAuthFrameHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::MgtAuthFrameHeader")
+    .SetParent<Header> ()
+    .SetGroupName ("Wifi")
+    .AddConstructor<MgtAuthFrameHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+MgtAuthFrameHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+MgtAuthFrameHeader::GetSerializedSize (void) const
+{
+  uint32_t size = 0;
+  size += 4;  //auth algorithm and transaction sequence
+  size += m_code.GetSerializedSize ();
+  return size;
+}
+
+void
+MgtAuthFrameHeader::Print (std::ostream &os) const
+{
+	  os << "status code=" << m_code << ", "
+	     << "authentication algorithm=" << m_authAlgorithmNumber << ", "
+	     << "transaction sequence number=" << m_authTransactionSeqNumber;
+}
+
+void
+MgtAuthFrameHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+  i.WriteHtolsbU16 (m_authAlgorithmNumber);
+  i.WriteHtolsbU16 (m_authTransactionSeqNumber);
+  i = m_code.Serialize (i);
+}
+
+uint32_t
+MgtAuthFrameHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  m_authAlgorithmNumber = i.ReadLsbtohU16 ();
+  m_authTransactionSeqNumber = i.ReadLsbtohU16 ();
+  i = m_code.Deserialize (i);
+  return i.GetDistanceFrom (start);
+}
 
 /***********************************************************
  *          Assoc Request

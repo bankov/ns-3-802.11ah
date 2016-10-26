@@ -128,6 +128,10 @@ public:
   virtual uint32_t Deserialize (Buffer::Iterator start);
 
   /**
+   * Set Type/Subtype values for an authentication frame header.
+   */
+  void SetAuthFrame (void);
+  /**
    * Set Type/Subtype values for an association request header.
    */
   void SetAssocReq (void);

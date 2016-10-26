@@ -36,6 +36,83 @@ namespace ns3 {
 
 /**
  * \ingroup wifi
+ * Implement the header for management frames of type authentication request.
+ */
+class MgtAuthFrameHeader : public Header
+{
+public:
+  MgtAuthFrameHeader ();
+  ~MgtAuthFrameHeader ();
+
+  /**
+   * Set the Authentication Algorithm Number
+   *
+   * \param algorithm the algorithm number
+   */
+  void SetAuthAlgorithmNumber (uint16_t algorithm);
+  /**
+   * Set the Authentication Transaction Sequence Number.
+   *
+   * \param transaction the authentication transaction sequence number
+   */
+  void SetAuthTransactionSeqNumber (uint16_t transaction);
+/*  *
+   * Set the Status Code.
+   *
+   * \param code the status code
+
+  void SetStatusCode (uint16_t code);*/
+  /**
+   * Set the status code.
+   *
+   * \param code the status code
+   */
+  void SetStatusCode (StatusCode code);
+  /**
+   * Return the authentication algorithm number.
+   *
+   * \return the authentication algorithm number
+   */
+  uint16_t GetAuthAlgorithmNumber (void) const;
+  /**
+   * Return the authentication transaction sequence number.
+   *
+   * \return the authentication transaction sequence number
+   */
+  uint16_t GetAuthTransactionSeqNumber (void) const;
+/*  *
+   * Return the status code.
+   *
+   * \return the status code
+
+  uint16_t GetStatusCode (void) const;*/
+  /**
+   * Return the status code.
+   *
+   * \return the status code
+   */
+  StatusCode GetStatusCode (void);
+
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual void Print (std::ostream &os) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+
+private:
+  uint16_t m_authAlgorithmNumber;
+  uint16_t m_authTransactionSeqNumber;
+  StatusCode m_code;                  //!< Status code
+
+};
+
+/**
+ * \ingroup wifi
  * Implement the header for management frames of type association request.
  */
 class MgtAssocRequestHeader : public Header
