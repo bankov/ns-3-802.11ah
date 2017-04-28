@@ -271,6 +271,7 @@ protected:
   uint32_t m_size;     //!< Current queue size
   uint32_t m_maxSize;  //!< Queue capacity
   Time m_maxDelay;     //!< Time to live for packets in the queue
+  Time m_nextCleanup;  //!< Nearest packet deadline
 };
 
 } //namespace ns3

@@ -59,7 +59,8 @@ WifiMacQueue::GetTypeId (void)
 }
 
 WifiMacQueue::WifiMacQueue ()
-  : m_size (0)
+  : m_size (0),
+    m_nextCleanup (0)
 {
 }
 
@@ -78,6 +79,7 @@ void
 WifiMacQueue::SetMaxDelay (Time delay)
 {
   m_maxDelay = delay;
+  m_nextCleanup = TimeStep (0);
 }
 
 uint32_t
@@ -114,12 +116,24 @@ WifiMacQueue::Cleanup (void)
     }
 
   Time now = Simulator::Now ();
+  if (now < m_nextCleanup)
+    {
+      return;
+    }
+
+  m_nextCleanup = now + m_maxDelay;
   uint32_t n = 0;
+
   for (PacketQueueI i = m_queue.begin (); i != m_queue.end (); )
     {
-      if (i->tstamp + m_maxDelay > now)
+      Time deadline = i->tstamp + m_maxDelay;
+      if (deadline > now)
         {
           i++;
+          if (deadline < m_nextCleanup)
+            {
+              m_nextCleanup = deadline;
+            }
         }
       else
         {
