@@ -1091,12 +1091,12 @@ StaWifiMac::SetState (MacState value)
   if (value == ASSOCIATED
       && m_state != ASSOCIATED)
     {
-      m_assocLogger (GetBssid ());
+      m_assocLogger (GetAddress ());
     }
   else if (value != ASSOCIATED
            && m_state == ASSOCIATED)
     {
-      m_deAssocLogger (GetBssid ());
+      m_deAssocLogger (GetAddress ());
     }
   m_state = value;
 }
