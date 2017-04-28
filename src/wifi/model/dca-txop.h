@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include "ns3/callback.h"
+#include "ns3/event-id.h"
 #include "ns3/packet.h"
 #include "ns3/nstime.h"
 #include "ns3/object.h"
@@ -333,6 +334,11 @@ private:
    */
   Ptr<Packet> GetFragmentPacket (WifiMacHeader *hdr);
 
+  void SetTransmitMSDULifetime (Time timeout);
+  void TransmitMSDULifetime (void);
+  void SetLifetime (uint32_t life);
+  uint32_t GetLifetime (void) const;
+
   virtual void DoDispose (void);
 
   Dcf *m_dcf;
@@ -350,6 +356,9 @@ private:
   Ptr<const Packet> m_currentPacket;
   WifiMacHeader m_currentHdr;
   uint8_t m_fragmentNumber;
+  uint32_t m_lifetimeAdd;
+  EventId m_transmitMSDUEvent;
+  Time m_transmitMSDULifetime;
 
 };
 

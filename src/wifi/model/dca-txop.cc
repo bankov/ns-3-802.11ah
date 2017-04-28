@@ -146,13 +146,22 @@ DcaTxop::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&DcaTxop::GetQueue),
                    MakePointerChecker<WifiMacQueue> ())
+	.AddAttribute ("TransmitMSDULifetime", "The time interval = packet lifetime after start transmit",
+	               TimeValue (Seconds (0.5)),
+	               MakeTimeAccessor (&DcaTxop::m_transmitMSDULifetime),
+	               MakeTimeChecker ())
+	.AddAttribute ("AddTransmitMSDULifetime", "Adding timeout TransmitMSDULifetime",
+					UintegerValue (0),
+					MakeUintegerAccessor (&DcaTxop::m_lifetimeAdd),
+					MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
 
 DcaTxop::DcaTxop ()
   : m_manager (0),
-    m_currentPacket (0)
+    m_currentPacket (0),
+	m_transmitMSDUEvent ()
 {
   NS_LOG_FUNCTION (this);
   AccessAllowedIfRaw (true);
@@ -160,6 +169,7 @@ DcaTxop::DcaTxop ()
   m_dcf = new DcaTxop::Dcf (this);
   m_queue = CreateObject<WifiMacQueue> ();
   m_rng = new RealRandomStream ();
+  m_lifetimeAdd = 0;
 }
 
 DcaTxop::~DcaTxop ()
@@ -181,6 +191,13 @@ DcaTxop::DoDispose (void)
   m_dcf = 0;
   m_rng = 0;
   m_txMiddle = 0;
+}
+
+void
+DcaTxop::SetTransmitMSDULifetime (Time timeout)
+{
+  NS_LOG_FUNCTION (this << timeout);
+  m_transmitMSDULifetime = timeout;
 }
 
 void
@@ -250,6 +267,19 @@ DcaTxop::SetAifsn (uint32_t aifsn)
 {
   NS_LOG_FUNCTION (this << aifsn);
   m_dcf->SetAifsn (aifsn);
+}
+
+void
+DcaTxop::SetLifetime (uint32_t timeoflife)
+{
+	NS_ASSERT((timeoflife==0)||(timeoflife==1));
+    m_lifetimeAdd = timeoflife;
+}
+
+uint32_t
+DcaTxop::GetLifetime (void) const
+{
+    return m_lifetimeAdd;
 }
 
 uint32_t
@@ -472,6 +502,14 @@ DcaTxop::NeedsAccess (void) const
   NS_LOG_FUNCTION (this);
   return !m_queue->IsEmpty () || m_currentPacket != 0;
 }
+
+void
+DcaTxop::TransmitMSDULifetime(void)
+{
+  NS_LOG_FUNCTION (this);
+  m_currentPacket = 0;
+}
+
 void
 DcaTxop::NotifyAccessGranted (void)
 {
@@ -488,6 +526,16 @@ DcaTxop::NotifyAccessGranted (void)
           return;
         }
       m_currentPacket = m_queue->Dequeue (&m_currentHdr);
+
+      if (m_lifetimeAdd == 1)
+        {
+          if (m_transmitMSDUEvent.IsRunning ())
+            {
+              m_transmitMSDUEvent.Cancel ();
+            }
+          m_transmitMSDUEvent = Simulator::Schedule (m_transmitMSDULifetime, &DcaTxop::TransmitMSDULifetime, this);
+        }
+
       NS_ASSERT (m_currentPacket != 0);
       uint16_t sequence = m_txMiddle->GetNextSequenceNumberfor (&m_currentHdr);
       m_currentHdr.SetSequenceNumber (sequence);
@@ -650,6 +698,12 @@ DcaTxop::GotAck (double snr, WifiMode txMode)
       /* we are not fragmenting or we are done fragmenting
        * so we can get rid of that packet now.
        */
+
+      if (m_transmitMSDUEvent.IsRunning ())
+        {
+          m_transmitMSDUEvent.Cancel ();
+        }
+
       m_currentPacket = 0;
       m_dcf->ResetCw ();
       m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
@@ -749,6 +803,10 @@ DcaTxop::EndTxNoAck (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("a transmission that did not require an ACK just finished");
+  if (m_transmitMSDUEvent.IsRunning ())
+    {
+      m_transmitMSDUEvent.Cancel ();
+    }
   m_currentPacket = 0;
   m_dcf->ResetCw ();
   m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
