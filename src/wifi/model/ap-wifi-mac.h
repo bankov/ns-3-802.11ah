@@ -223,6 +223,7 @@ private:
    */
   bool GetBeaconGeneration (void) const;
     
+  void SetRawEnabled (bool enabled);
   void SetRawGroupInterval (uint32_t interval);
   uint32_t GetRawGroupInterval (void) const;
   void SetSlotFormat (uint32_t format);
@@ -233,6 +234,7 @@ private:
   void SetValue (uint32_t val);
   void SetMinValue (uint32_t minval);
   void SetNAssociating (uint32_t num);
+  bool GetRawEnabled (void) const;
   uint32_t GetSlotFormat (void) const;
   uint32_t GetSlotCrossBoundary (void) const;
   uint32_t GetSlotDurationCount (void) const;
@@ -241,7 +243,6 @@ private:
   uint32_t GetValue (void) const;
   uint32_t GetMinValue (void) const;
   uint32_t GetNAssociating (void) const;
-    
     
   void SetTotalStaNum (uint32_t num);
   uint32_t GetTotalStaNum (void) const;
@@ -274,6 +275,8 @@ private:
   bool m_cac_improve;
   int m_delta;
   int m_queueLast;
+
+  bool m_rawEnabled;
 };
 
 } //namespace ns3

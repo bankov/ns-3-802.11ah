@@ -53,6 +53,7 @@ public:
   void SetTIM (TIM tim);
   void SetRPS (RPS rps);
   void SetAuthCtrl (AuthenticationCtrl auth);
+  void SetRawEnabled (bool enabled);
 
   //Mac48Address GetSA (void) const;
   uint32_t GetTimeStamp (void) const;
@@ -60,6 +61,7 @@ public:
   uint32_t GetNextTBTT (void) const;
   uint32_t GetCompressedSSID (void) const;
   uint8_t GetAccessNetwork (void) const;
+  bool GetRawEnabled (void) const;
   S1gBeaconCompatibility GetBeaconCompatibility (void) const;
   TIM GetTIM (void) const;
   RPS GetRPS (void) const;
@@ -78,6 +80,7 @@ private:
   uint32_t m_tbtt;
   uint32_t m_compressedssid;
   uint8_t m_accessnetwork;
+  bool m_rawEnabled;
 
   S1gBeaconCompatibility m_beaconcompatibility;
   TIM m_tim;

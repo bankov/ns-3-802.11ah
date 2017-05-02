@@ -37,6 +37,7 @@ NS_OBJECT_ENSURE_REGISTERED (S1gBeaconHeader);
 
 S1gBeaconHeader::S1gBeaconHeader ()
 {
+  m_rawEnabled = 0;
 }
     
 S1gBeaconHeader::~S1gBeaconHeader ()
@@ -98,6 +99,11 @@ S1gBeaconHeader::SetAuthCtrl (AuthenticationCtrl auth)
    m_auth = auth;
 }
 
+void
+S1gBeaconHeader::SetRawEnabled (bool enabled)
+{
+   m_rawEnabled = enabled;
+}
 /*
 Mac48Address
 S1gBeaconHeader::GetSA (void) const
@@ -134,7 +140,13 @@ S1gBeaconHeader::GetAccessNetwork (void) const
 {
   return m_accessnetwork;
 }
-    
+
+bool
+S1gBeaconHeader::GetRawEnabled (void) const
+{
+  return m_rawEnabled;
+}
+
 S1gBeaconCompatibility
 S1gBeaconHeader::GetBeaconCompatibility (void) const
 {
@@ -195,7 +207,10 @@ S1gBeaconHeader::GetSerializedSize (void) const
   size += 1; // Access Network
   size += m_beaconcompatibility.GetSerializedSize ();
   size += m_tim.GetSerializedSize ();
-  size += m_rps.GetSerializedSize ();
+  if (m_rawEnabled)
+    {
+      size += m_rps.GetSerializedSize ();
+    }
   size += m_auth.GetSerializedSize ();
   
   return size;
@@ -218,7 +233,10 @@ S1gBeaconHeader::Serialize (Buffer::Iterator start) const
     i.WriteU8 (m_accessnetwork);
     i = m_beaconcompatibility.Serialize (i);
     i = m_tim.Serialize (i);
-    i = m_rps.Serialize (i);
+    if (m_rawEnabled)
+      {
+        i = m_rps.Serialize (i);
+      }
     i = m_auth.Serialize (i);
 }
 
@@ -238,7 +256,7 @@ S1gBeaconHeader::Deserialize (Buffer::Iterator start)
     m_accessnetwork = i.ReadU8 ();
     i = m_beaconcompatibility.Deserialize (i);
     i = m_tim.Deserialize (i);
-    i = m_rps.Deserialize (i);
+    i = m_rps.DeserializeIfPresent (i);
     i = m_auth.DeserializeIfPresent (i);
 
     return i.GetDistanceFrom (start);

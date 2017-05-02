@@ -72,6 +72,11 @@ ApWifiMac::GetTypeId (void)
                    MakeBooleanAccessor (&ApWifiMac::SetBeaconGeneration,
                                         &ApWifiMac::GetBeaconGeneration),
                    MakeBooleanChecker ())
+    .AddAttribute ("RawEnabled", "Whether or not to use the RAW.",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ApWifiMac::SetRawEnabled,
+                                        &ApWifiMac::GetRawEnabled),
+                   MakeBooleanChecker ())
     .AddAttribute ("NRawGroupStas", "Number of stations in one Raw Group",
                    UintegerValue (6000),
                    MakeUintegerAccessor (&ApWifiMac::GetRawGroupInterval,
@@ -262,7 +267,11 @@ ApWifiMac::GetMinValue (void) const
     return minvalue;
 }
 
-    
+bool
+ApWifiMac::GetRawEnabled (void) const
+{
+  return m_rawEnabled;
+}
 
 uint32_t
 ApWifiMac::GetNAssociating (void) const
@@ -362,6 +371,11 @@ ApWifiMac::SetMinValue (uint32_t minval)
     minvalue = minval;
 }
 
+void
+ApWifiMac::SetRawEnabled (bool enabled)
+{
+  m_rawEnabled = enabled;
+}
 
 void
 ApWifiMac::SetNAssociating (uint32_t num)
@@ -673,8 +687,8 @@ ApWifiMac::SendOneBeacon (void)
   WifiMacHeader hdr;
 
   uint32_t q;
-    if (m_s1gSupported)
-     {
+  if (m_s1gSupported)
+    {
       hdr.SetS1gBeacon ();
       hdr.SetAddr1 (Mac48Address::GetBroadcast ());
       hdr.SetAddr2 (GetAddress ()); // for debug, not accordance with draft, need change
@@ -684,31 +698,36 @@ ApWifiMac::SendOneBeacon (void)
       S1gBeaconCompatibility compatibility;
       compatibility.SetBeaconInterval (m_beaconInterval.GetMicroSeconds ());
       beacon.SetBeaconCompatibility (compatibility);
-      RPS m_rps;
-      RPS::RawAssignment raw;
-      uint8_t control = 0;
-      raw.SetRawControl (control);//support paged STA or not
-      raw.SetSlotFormat (m_SlotFormat);
-      raw.SetSlotCrossBoundary (m_slotCrossBoundary);
-      raw.SetSlotDurationCount (m_slotDurationCount);
-      raw.SetSlotNum (m_slotNum);
 
-      uint32_t page = 0;
-      static uint32_t aid_start = 1;
-      static uint32_t aid_end = m_rawGroupInterval; //m_rawGroupInterval;
-      uint32_t rawinfo = (aid_end << 13) | (aid_start << 2) | page;
+      if (m_rawEnabled)
+        {
+          RPS m_rps;
+          RPS::RawAssignment raw;
+          uint8_t control = 0;
+          raw.SetRawControl (control);//support paged STA or not
+          raw.SetSlotFormat (m_SlotFormat);
+          raw.SetSlotCrossBoundary (m_slotCrossBoundary);
+          raw.SetSlotDurationCount (m_slotDurationCount);
+          raw.SetSlotNum (m_slotNum);
 
-      raw.SetRawGroup (rawinfo); // (b0-b1, page index) (b2-b12, raw start AID) (b13-b23, raw end AID)
+          uint32_t page = 0;
+          static uint32_t aid_start = 1;
+          static uint32_t aid_end = m_rawGroupInterval; //m_rawGroupInterval;
+          uint32_t rawinfo = (aid_end << 13) | (aid_start << 2) | page;
+
+          raw.SetRawGroup (rawinfo); // (b0-b1, page index) (b2-b12, raw start AID) (b13-b23, raw end AID)
       
-         aid_start = aid_start + m_rawGroupInterval;
-         aid_end = aid_end + m_rawGroupInterval;
-         if (aid_end > m_totalStaNum)
-           {
-             aid_start = 1;
-             aid_end = m_rawGroupInterval;
-           }
-      m_rps.SetRawAssignment(raw);
-      beacon.SetRPS (m_rps);
+          aid_start = aid_start + m_rawGroupInterval;
+          aid_end = aid_end + m_rawGroupInterval;
+          if (aid_end > m_totalStaNum)
+            {
+              aid_start = 1;
+              aid_end = m_rawGroupInterval;
+            }
+          m_rps.SetRawAssignment(raw);
+          beacon.SetRawEnabled (true);
+          beacon.SetRPS (m_rps);
+        }
 
       AuthenticationCtrl  AuthenCtrl;
       AuthenCtrl.SetControlType (false); //centralized

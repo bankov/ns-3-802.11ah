@@ -835,73 +835,75 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
        SetBssid (hdr->GetAddr3 ()); //for debug
      }
     if (goodBeacon)
-     {
-        UnsetInRAWgroup ();
-        uint8_t * rawassign;
-        rawassign = beacon.GetRPS().GetRawAssignment();
-        uint8_t raw_len = beacon.GetRPS().GetInformationFieldSize();
-        uint8_t rawtypeindex = rawassign[0] & 0x07;
-        uint8_t pageindex = rawassign[4] & 0x03;
-         
-         uint16_t m_rawslot;
-         m_rawslot = (uint16_t(rawassign[2]) << 8) | (uint16_t(rawassign[1]));
-         uint8_t m_SlotFormat = uint8_t (m_rawslot >> 15) & 0x0001;
-         uint8_t m_slotCrossBoundary = uint8_t (m_rawslot >> 14) & 0x0002;
-         uint16_t m_slotDurationCount;
-         uint16_t m_slotNum;
+      {
+        if (beacon.GetRPS ().GetInformationFieldSize ())
+          {
+            UnsetInRAWgroup ();
+            uint8_t * rawassign;
+            rawassign = beacon.GetRPS().GetRawAssignment();
+            uint8_t raw_len = beacon.GetRPS().GetInformationFieldSize();
+            uint8_t rawtypeindex = rawassign[0] & 0x07;
+            uint8_t pageindex = rawassign[4] & 0x03;
 
-         NS_ASSERT (m_SlotFormat <= 1);
-         
-         if (m_SlotFormat == 0)
-           {
-             m_slotDurationCount = (m_rawslot >> 6) & 0x00ff;
-             m_slotNum = m_rawslot & 0x003f;
-           }
-         else if (m_SlotFormat == 1)
-           {
-             m_slotDurationCount = (m_rawslot >> 3) & 0x07ff;
-             m_slotNum = m_rawslot & 0x0007;
-           }
+            uint16_t m_rawslot;
+            m_rawslot = (uint16_t(rawassign[2]) << 8) | (uint16_t(rawassign[1]));
+            uint8_t m_SlotFormat = uint8_t (m_rawslot >> 15) & 0x0001;
+            uint8_t m_slotCrossBoundary = uint8_t (m_rawslot >> 14) & 0x0002;
+            uint16_t m_slotDurationCount;
+            uint16_t m_slotNum;
 
-        m_slotDuration = MicroSeconds(500 + m_slotDurationCount * 120);
-        m_lastRawDurationus = m_slotDuration * m_slotNum;
- 
-         if (pageindex == ((GetAID() >> 11 ) & 0x0003)) //in the page indexed
-           {
-             uint8_t rawgroup_l = rawassign[4];
-             uint8_t rawgroup_m = rawassign[5];
-             uint8_t rawgroup_h = rawassign[6];
-             uint32_t rawgroup = (uint32_t(rawassign[6]) << 16) | (uint32_t(rawassign[5]) << 8) | uint32_t(rawassign[4]);
-             uint16_t raw_start = (rawgroup >> 2) & 0x000003ff;
-             uint16_t raw_end = (rawgroup >> 13) & 0x000003ff;
-             if ((raw_start <= (GetAID() & 0x03ff)) && ((GetAID() & 0x03ff) <= raw_end))
+            NS_ASSERT (m_SlotFormat <= 1);
+
+            if (m_SlotFormat == 0)
+              {
+                m_slotDurationCount = (m_rawslot >> 6) & 0x00ff;
+                m_slotNum = m_rawslot & 0x003f;
+              }
+            else if (m_SlotFormat == 1)
+              {
+                m_slotDurationCount = (m_rawslot >> 3) & 0x07ff;
+                m_slotNum = m_rawslot & 0x0007;
+              }
+
+            m_slotDuration = MicroSeconds(500 + m_slotDurationCount * 120);
+            m_lastRawDurationus = m_slotDuration * m_slotNum;
+
+            if (pageindex == ((GetAID() >> 11 ) & 0x0003)) //in the page indexed
+              {
+                uint8_t rawgroup_l = rawassign[4];
+                uint8_t rawgroup_m = rawassign[5];
+                uint8_t rawgroup_h = rawassign[6];
+                uint32_t rawgroup = (uint32_t(rawassign[6]) << 16) | (uint32_t(rawassign[5]) << 8) | uint32_t(rawassign[4]);
+                uint16_t raw_start = (rawgroup >> 2) & 0x000003ff;
+                uint16_t raw_end = (rawgroup >> 13) & 0x000003ff;
+                if ((raw_start <= (GetAID() & 0x03ff)) && ((GetAID() & 0x03ff) <= raw_end))
+                  {
+                    SetInRAWgroup ();
+
+                    uint16_t statsPerSlot = 0;
+                    uint16_t statRawSlot = 0;
+
+                    Ptr<UniformRandomVariable> m_rv = CreateObject<UniformRandomVariable> ();
+                    uint16_t offset = m_rv->GetValue (0, 1023);
+                    offset =0; // for test
+                    statsPerSlot = (raw_end - raw_start + 1)/m_slotNum;
+                    //statRawSlot = ((GetAID() & 0x03ff)-raw_start)/statsPerSlot;
+                    statRawSlot = ((GetAID() & 0x03ff)+offset)%m_slotNum;
+                    m_statSlotStart = MicroSeconds((500 + m_slotDurationCount * 120)*statRawSlot);
+                  }
+               }
+
+             m_rawStart = true;
+             if (rawtypeindex == 4) // only support Generic Raw (paged STA RAW or not)
                {
-                 SetInRAWgroup ();
-                   
-                 uint16_t statsPerSlot = 0;
-                 uint16_t statRawSlot = 0;
-                 
-                  Ptr<UniformRandomVariable> m_rv = CreateObject<UniformRandomVariable> ();
-                 uint16_t offset = m_rv->GetValue (0, 1023);
-                 offset =0; // for test
-                 statsPerSlot = (raw_end - raw_start + 1)/m_slotNum;
-                 //statRawSlot = ((GetAID() & 0x03ff)-raw_start)/statsPerSlot;
-                 statRawSlot = ((GetAID() & 0x03ff)+offset)%m_slotNum;
-                 m_statSlotStart = MicroSeconds((500 + m_slotDurationCount * 120)*statRawSlot);
+                 m_pagedStaRaw = true;
+               }
+             else
+               {
+                 m_pagedStaRaw = false;
                }
             }
-         
-         m_rawStart = true;
-         if (rawtypeindex == 4) // only support Generic Raw (paged STA RAW or not)
-           {
-             m_pagedStaRaw = true;
-           }
-         else
-           {
-             m_pagedStaRaw = false;
-           }
-         
-         
+
             AuthenticationCtrl AuthenCtrl;
             AuthenCtrl = beacon.GetAuthCtrl ();
             fasTAssocType = AuthenCtrl.GetControlType ();
