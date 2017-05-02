@@ -355,4 +355,25 @@ WifiMacQueue::PeekFirstAvailable (WifiMacHeader *hdr, Time &timestamp,
   return 0;
 }
 
+void
+WifiMacQueue::DropByAddress (Mac48Address dest)
+{
+  Cleanup ();
+  if (!m_queue.empty ())
+    {
+      PacketQueueI it;
+      for (it = m_queue.begin (); it != m_queue.end ();)
+        {
+          if (it->hdr.GetAddr1 () == dest)
+            {
+              it = m_queue.erase (it);
+              m_size--;
+            }
+          else
+            {
+              ++it;
+            }
+        }
+    }
+}
 } //namespace ns3

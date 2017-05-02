@@ -221,6 +221,13 @@ RegularWifiMac::ResetWifiPhy (void)
   m_phy = 0;
 }
 
+Ptr<MacLow>
+RegularWifiMac::GetMacLow (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_low;
+}
+
 void
 RegularWifiMac::SetForwardUpCallback (ForwardUpCallback upCallback)
 {

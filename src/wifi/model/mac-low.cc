@@ -377,6 +377,9 @@ MacLow::MacLow ()
   m_ampdu = false;
   m_sentMpdus = 0;
   m_aggregateQueue = CreateObject<WifiMacQueue> ();
+
+  m_waitAssoc = false;
+  m_assocFrom = Mac48Address ();
 }
 
 MacLow::~MacLow ()
@@ -392,6 +395,9 @@ MacLow::GetTypeId (void)
     .SetParent<Object> ()
     .SetGroupName ("Wifi")
     .AddConstructor<MacLow> ()
+    .AddTraceSource ("ApAssoc", "A STA has associated with an Access Point.",
+                     MakeTraceSourceAccessor (&MacLow::m_apAssocLogger),
+                     "ns3::Mac48Address::TracedCallback")
   ;
   return tid;
 }
@@ -1035,6 +1041,12 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiTxVector txVector, Wifi
         }
       if (gotAck)
         {
+          if (m_waitAssoc)
+            {
+              m_waitAssoc = false;
+              m_apAssocLogger (m_assocFrom);
+            }
+
           m_listener->GotAck (rxSnr, txVector.GetMode ());
         }
       if (m_txParams.HasNextPacket ())
@@ -2095,6 +2107,13 @@ MacLow::SendDataPacket (void)
         }
     }
   m_currentHdr.SetDuration (duration);
+
+  m_waitAssoc = false;
+  if (m_currentHdr.IsAssocResp ())
+    {
+      m_waitAssoc = true;
+      m_assocFrom = m_currentHdr.GetAddr1 ();
+    }
 
   if (!m_ampdu)
     {

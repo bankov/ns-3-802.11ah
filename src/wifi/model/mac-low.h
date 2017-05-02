@@ -830,6 +830,10 @@ protected:
    */
   virtual WifiTxVector GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
 private:
+
+  bool m_waitAssoc;
+  Mac48Address m_assocFrom;
+
   /**
    * Cancel all scheduled events. Called before beginning a transmission
    * or switching channel.
@@ -1370,6 +1374,8 @@ private:
   WifiTxVector m_currentTxVector;     //!< TXVECTOR used for the current packet transmission
   bool m_receivedAtLeastOneMpdu;      //!< Flag whether an MPDU has already been successfully received while receiving an A-MPDU
   std::vector<Item> m_txPackets;      //!< Contain temporary items to be sent with the next A-MPDU transmission, once RTS/CTS exchange has succeeded. It is not used in other cases.
+
+  TracedCallback<Mac48Address> m_apAssocLogger; //!< Logs events when AP gets an ACK for association response
 };
 
 } //namespace ns3

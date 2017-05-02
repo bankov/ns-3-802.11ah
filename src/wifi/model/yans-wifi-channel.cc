@@ -31,6 +31,8 @@
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
 
+#include <algorithm>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("YansWifiChannel");
@@ -148,6 +150,16 @@ void
 YansWifiChannel::Add (Ptr<YansWifiPhy> phy)
 {
   m_phyList.push_back (phy);
+}
+
+void
+YansWifiChannel::Remove (Ptr<YansWifiPhy> phy)
+{
+  auto it = std::find(m_phyList.begin(), m_phyList.end(), phy);
+  if (it != m_phyList.end() )
+    {
+      m_phyList.erase (it);
+    }
 }
 
 int64_t

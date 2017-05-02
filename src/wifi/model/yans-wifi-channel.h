@@ -68,6 +68,14 @@ public:
    */
   void Add (Ptr<YansWifiPhy> phy);
 
+
+  /**
+   * Removes the given YansWifiPhy from the PHY list
+   *
+   * \param phy the YansWifiPhy to be removed from the PHY list
+   */
+  void Remove (Ptr<YansWifiPhy> phy);
+
   /**
    * \param loss the new propagation loss model.
    */

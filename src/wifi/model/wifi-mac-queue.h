@@ -216,7 +216,7 @@ public:
    * \return the current queue size
    */
   uint32_t GetSize (void);
-
+  void DropByAddress (Mac48Address dest);
 
 protected:
   /**

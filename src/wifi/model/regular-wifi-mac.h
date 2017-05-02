@@ -194,6 +194,10 @@ public:
    */
   virtual Ptr<WifiPhy> GetWifiPhy (void) const;
   /**
+   * \return the mac-low.
+   */
+  virtual Ptr<MacLow> GetMacLow (void) const;
+  /**
    * removes attached WifiPhy device from this MAC.
    */
   virtual void ResetWifiPhy (void);
@@ -237,6 +241,12 @@ public:
   virtual void SetCompressedBlockAckTimeout (Time blockAckTimeout);
   virtual Time GetCompressedBlockAckTimeout (void) const;
 
+  /**
+   * Accessor for the DCF object
+   *
+   * \return a smart pointer to DcaTxop
+   */
+  Ptr<DcaTxop> GetDcaTxop (void) const;
 
 protected:
   virtual void DoInitialize ();
@@ -267,13 +277,6 @@ protected:
   /** This is a map from Access Category index to the corresponding
   channel access function */
   EdcaQueues m_edca;
-
-  /**
-   * Accessor for the DCF object
-   *
-   * \return a smart pointer to DcaTxop
-   */
-  Ptr<DcaTxop> GetDcaTxop (void) const;
 
   /**
    * Accessor for the AC_VO channel access function
