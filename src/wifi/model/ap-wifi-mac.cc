@@ -774,6 +774,11 @@ ApWifiMac::SendOneBeacon (void)
             }
         }
 
+      if (algorithm == 4)
+        {
+          AuthenThreshold = 1023;
+        }
+
       if (algorithm == 5)
         {
           if (!m_saturatedAssociated)
