@@ -378,7 +378,10 @@ MacLow::MacLow ()
   m_sentMpdus = 0;
   m_aggregateQueue = CreateObject<WifiMacQueue> ();
 
+  m_ass = 0;
+  m_auth = 0;
   m_waitAssoc = false;
+  m_waitAuth = false;
   m_assocFrom = Mac48Address ();
 }
 
@@ -927,6 +930,18 @@ MacLow::NotifySleepNow (void)
   m_listener = 0;
 }
 
+int
+MacLow::GetAss(void)
+{
+	return m_ass;
+}
+
+int
+MacLow::GetAuth(void)
+{
+  return m_auth;
+}
+
 void
 MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiTxVector txVector, WifiPreamble preamble, bool ampduSubframe)
 {
@@ -1043,8 +1058,14 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiTxVector txVector, Wifi
         {
           if (m_waitAssoc)
             {
+              m_ass++;
               m_waitAssoc = false;
               m_apAssocLogger (m_assocFrom);
+            }
+          if (m_waitAuth)
+            {
+              m_auth++;
+              m_waitAuth = false;
             }
 
           m_listener->GotAck (rxSnr, txVector.GetMode ());
@@ -2109,10 +2130,15 @@ MacLow::SendDataPacket (void)
   m_currentHdr.SetDuration (duration);
 
   m_waitAssoc = false;
+  m_waiAuth = false;
   if (m_currentHdr.IsAssocResp ())
     {
       m_waitAssoc = true;
       m_assocFrom = m_currentHdr.GetAddr1 ();
+    }
+  if (m_currentHdr.IsAuthentication ())
+    {
+      m_waitAuth = true;
     }
 
   if (!m_ampdu)

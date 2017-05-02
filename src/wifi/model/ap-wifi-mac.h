@@ -289,6 +289,13 @@ private:
   int m_queueLast;
 
   bool m_rawEnabled;
+
+  int m_counterSuccessLast;						 //!< The counter of successful transfers for one beacon interval
+  int m_counterSuccessNew;
+  int m_counterAuthSuccessNew;
+  int m_summ;
+  uint64_t t;
+  uint64_t y;
 };
 
 } //namespace ns3

@@ -176,6 +176,13 @@ ApWifiMac::ApWifiMac ()
 
   m_authSlot = 8;
 
+  m_counterSuccessLast = 0;
+  m_counterSuccessNew = 0;
+  m_counterAuthSuccessNew = 0;
+  m_summ = 0;
+  t = 0;
+  y = 0;
+
   //m_SlotFormat = 0;
 }
 
@@ -758,6 +765,8 @@ ApWifiMac::SendOneBeacon (void)
   WifiMacHeader hdr;
 
   uint32_t q;
+  int m = m_low->GetAss();
+  int z = m_low->GetAuth();
   if (m_s1gSupported)
     {
       hdr.SetS1gBeacon ();
@@ -1043,6 +1052,13 @@ ApWifiMac::SendOneBeacon (void)
   m_beaconEvent = Simulator::Schedule (m_beaconInterval, &ApWifiMac::SendOneBeacon, this);
 
   m_queueLast = q;
+
+  m_summ = m_summ + m_counterSuccessLast;
+  m_counterSuccessLast = m_counterSuccessNew;
+  m_counterSuccessNew = 0;
+  m_counterAuthSuccessNew = 0;
+  t = m;
+  y = z;
 }
 
 void
@@ -1162,6 +1178,7 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
         {
           if (hdr->IsAssocReq ())
             {
+              m_counterSuccessNew++;
                //NS_LOG_LOGIC ("Received AssocReq "); // for test
               //first, verify that the the station's supported
               //rate set is compatible with our Basic Rate set
@@ -1240,6 +1257,7 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
             {
               MgtAuthFrameHeader auth;
               packet->RemoveHeader (auth);
+              m_counterAuthSuccessNew++;
 
               SendAuthResp (hdr->GetAddr2 (), true);
               return;

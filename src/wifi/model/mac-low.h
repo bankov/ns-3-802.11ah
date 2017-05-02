@@ -818,6 +818,9 @@ public:
    */
   void FlushAggregateQueue (void);
 
+  int GetAss(void);
+  int GetAuth (void);
+
 protected:
   /**
    * Return a TXVECTOR for the DATA frame given the destination.
@@ -831,9 +834,11 @@ protected:
   virtual WifiTxVector GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
 private:
 
+  int m_ass;
+  int m_auth;
   bool m_waitAssoc;
+  bool m_waitAuth;
   Mac48Address m_assocFrom;
-
   /**
    * Cancel all scheduled events. Called before beginning a transmission
    * or switching channel.
