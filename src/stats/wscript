@@ -4,7 +4,7 @@ def configure(conf):
     have_sqlite3 = conf.check_cfg(package='sqlite3', uselib_store='SQLITE3',
                                   args=['--cflags', '--libs'],
                                   mandatory=False)
-
+    have_sqlite3 = False
     conf.env['SQLITE_STATS'] = have_sqlite3
     conf.report_optional_feature("SqliteDataOutput", "SQlite stats data output",
                                  conf.env['SQLITE_STATS'],
