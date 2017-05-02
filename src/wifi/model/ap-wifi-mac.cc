@@ -699,6 +699,81 @@ ApWifiMac::SendOneBeacon (void)
             }
         }
 
+      if (algorithm == 3)
+        {
+          if (m_cac_state == WAIT)
+            {
+              if (MgtQueueSize != 0)
+                {
+                  AuthenThreshold = 0;
+                  m_delta = 1023;
+                  m_cac_improve = false;
+                  m_cac_counter = 5;
+                  m_cac_state = LEARN;
+                }
+              else
+                {
+                  AuthenThreshold = 1023;
+                }
+            }
+          else if (m_cac_state == LEARN)
+            {
+              if (AuthenThreshold != 0)
+                {
+                  if (MgtQueueSize != 0)
+                    {
+                      AuthenThreshold = 0;
+                    }
+                  else
+                    {
+                      m_delta /= 2;
+                      m_cac_improve = true;
+                      m_cac_state = WORK;
+                    }
+                }
+              else if (MgtQueueSize == 0)
+                {
+                  m_delta /= 2;
+                  AuthenThreshold = m_delta;
+                }
+            }
+          else // WORK state
+            {
+              if (AuthenThreshold == 1023)
+                {
+                  m_cac_counter--;
+                  if (m_cac_counter <= 0)
+                    {
+                      m_cac_state = WAIT;
+                    }
+                }
+              else if (MgtQueueSize == 0)
+                {
+                  if (m_cac_improve)
+                    {
+                      m_delta++;
+                    }
+                  AuthenThreshold += m_delta;
+                  if (AuthenThreshold >= 1023)
+                    {
+                      AuthenThreshold = 1023;
+                      m_cac_improve = false;
+                    }
+                }
+              else
+                {
+                  if (m_queueLast == 0)
+                    {
+                      if (m_cac_improve)
+                        {
+                          m_delta = std::max<int>(m_delta - 1, 1);
+                          m_cac_improve = false;
+                        }
+                    }
+                }
+            }
+        }
+
       if (algorithm == 5)
         {
           if (!m_saturatedAssociated)
