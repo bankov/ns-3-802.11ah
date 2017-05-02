@@ -604,6 +604,16 @@ ApWifiMac::SendOneBeacon (void)
                AuthenThreshold -=50;
            }
         }
+
+	  if (AuthenThreshold>=1023)
+	    {
+		  AuthenThreshold = 1023;
+	    }
+	  if (AuthenThreshold<=0)
+	    {
+		  AuthenThreshold = 0;
+	    }
+
       AuthenCtrl.SetThreshold (AuthenThreshold); //centralized
       beacon.SetAuthCtrl (AuthenCtrl);
       packet->AddHeader (beacon);
