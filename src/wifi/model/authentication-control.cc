@@ -142,7 +142,7 @@ AuthenticationCtrl::GetInformationFieldSize () const
     NS_ASSERT (m_AuthenSupported > 0);
     if (ctrltype)
      {
-        return 2;
+        return 3;
      }
     else
     {
@@ -174,24 +174,20 @@ AuthenticationCtrl::SerializeInformationField (Buffer::Iterator start) const
 uint8_t
 AuthenticationCtrl::DeserializeInformationField (Buffer::Iterator start, uint8_t length)
 {
-
-    ctrlThreshold = start.ReadU16 ();
-
-    if ((ctrlThreshold & 0x8000) == 0x0000)
-      {
-        ctrltype = false;
-        ctrlThreshold = ctrlThreshold & 0x03ff;
-      }
-    else
-     {
-       ctrltype = true;
-       slotDuration = (ctrlThreshold >> 8) & 0x007f;
-       maxInterval = ctrlThreshold & 0x00ff;
-       minInterval = start.ReadU8 ();
-     }
-
-    m_length = length;
-    return length;
+  if (length == 2)
+    {
+      ctrltype = false;
+      ctrlThreshold = start.ReadU16 () & 0x03ff;
+    }
+  else
+    {
+      ctrltype = true;
+      slotDuration = start.ReadU8 () & 0x7f;
+      maxInterval = start.ReadU8 ();
+      minInterval = start.ReadU8 ();
+    }
+  m_length = length;
+  return length;
 }
 
 } //namespace ns3

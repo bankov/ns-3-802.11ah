@@ -107,6 +107,26 @@ ApWifiMac::GetTypeId (void)
                    MakeUintegerAccessor (&ApWifiMac::GetSlotNum,
                                          &ApWifiMac::SetSlotNum),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("AuthenProtocol", "choice of centralized (0) or distributed (1) authentication control protocol",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&ApWifiMac::GetProtocol,
+                                         &ApWifiMac::SetProtocol),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("AuthenSlot", "number of authenticate SLOT in BI for distributed protocol",
+                   UintegerValue (8),
+                   MakeUintegerAccessor (&ApWifiMac::GetAuthSlot,
+                                         &ApWifiMac::SetAuthSlot),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("TIMin", "value of minimal time interval for DAC",
+                   UintegerValue (8),
+                   MakeUintegerAccessor (&ApWifiMac::GetTiMin,
+                                         &ApWifiMac::SetTiMin),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("TIMax", "value of maximal time interval for DAC",
+                   UintegerValue (255),
+                   MakeUintegerAccessor (&ApWifiMac::GetTiMax,
+                                         &ApWifiMac::SetTiMax),
+                   MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("Algorithm", "choice of algorithm of connection of stations",
                    UintegerValue (3),
                    MakeUintegerAccessor (&ApWifiMac::GetAlgorithm,
@@ -153,6 +173,8 @@ ApWifiMac::ApWifiMac ()
   m_delta = 1;
   m_cac_state = WAIT;
   m_cac_counter = 5;
+
+  m_authSlot = 8;
 
   //m_SlotFormat = 0;
 }
@@ -253,6 +275,30 @@ uint32_t
 ApWifiMac::GetAlgorithm (void) const
 {
     return algorithm;
+}
+
+uint32_t
+ApWifiMac::GetProtocol (void) const
+{
+  return m_protocol;
+}
+
+uint32_t
+ApWifiMac::GetAuthSlot (void) const
+{
+  return m_authSlot;
+}
+
+uint32_t
+ApWifiMac::GetTiMin (void) const
+{
+  return m_tiMin;
+}
+
+uint32_t
+ApWifiMac::GetTiMax (void) const
+{
+  return m_tiMax;
 }
 
 uint32_t
@@ -357,6 +403,31 @@ ApWifiMac::SetAlgorithm (uint32_t alg)
 {
     NS_ASSERT((alg==0)||(alg==1)||(alg==2)||(alg==3)||(alg==4)||(alg==5)||(alg==6));
     algorithm = alg;
+}
+
+void
+ApWifiMac::SetProtocol (uint32_t prot)
+{
+  NS_ASSERT((prot==0)||(prot==1));
+  m_protocol = prot;
+}
+
+void
+ApWifiMac::SetAuthSlot (uint32_t slot)
+{
+  m_authSlot = slot;
+}
+
+void
+ApWifiMac::SetTiMin (uint32_t timin)
+{
+  m_tiMin = timin;
+}
+
+void
+ApWifiMac::SetTiMax (uint32_t timax)
+{
+  m_tiMax = timax;
 }
 
 void
@@ -730,6 +801,8 @@ ApWifiMac::SendOneBeacon (void)
         }
 
       AuthenticationCtrl  AuthenCtrl;
+      if (m_protocol == 0)
+        {
       AuthenCtrl.SetControlType (false); //centralized
       Ptr<WifiMacQueue> MgtQueue = m_dca->GetQueue ();
       uint32_t MgtQueueSize= MgtQueue->GetSize ();
@@ -932,6 +1005,14 @@ ApWifiMac::SendOneBeacon (void)
 	    }
 
       AuthenCtrl.SetThreshold (AuthenThreshold); //centralized
+        }
+      else
+        {
+          AuthenCtrl.SetControlType (true); //distributed
+          AuthenCtrl.SetMinInterval(m_tiMin);
+          AuthenCtrl.SetMaxInterval(m_tiMax);
+          AuthenCtrl.SetSlotDuration(m_authSlot);
+        }
       beacon.SetAuthCtrl (AuthenCtrl);
       packet->AddHeader (beacon);
       m_beaconDca->Queue (packet, hdr);

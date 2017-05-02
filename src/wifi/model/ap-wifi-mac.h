@@ -230,6 +230,10 @@ private:
   void SetSlotCrossBoundary (uint32_t cross);
   void SetSlotDurationCount (uint32_t count);
   void SetSlotNum (uint32_t count);
+  void SetProtocol (uint32_t prot);
+  void SetAuthSlot (uint32_t slot);
+  void SetTiMin (uint32_t timin);
+  void SetTiMax (uint32_t timax);
   void SetAlgorithm (uint32_t alg);
   void SetValue (uint32_t val);
   void SetMinValue (uint32_t minval);
@@ -239,6 +243,10 @@ private:
   uint32_t GetSlotCrossBoundary (void) const;
   uint32_t GetSlotDurationCount (void) const;
   uint32_t GetSlotNum (void) const;
+  uint32_t GetProtocol (void) const;
+  uint32_t GetAuthSlot (void) const;
+  uint32_t GetTiMin (void) const;
+  uint32_t GetTiMax (void) const;
   uint32_t GetAlgorithm (void) const;
   uint32_t GetValue (void) const;
   uint32_t GetMinValue (void) const;
@@ -256,10 +264,14 @@ private:
   uint32_t m_SlotFormat;
   uint32_t m_slotCrossBoundary;
   uint32_t m_slotDurationCount;
-  uint32_t  m_slotNum;
+  uint32_t m_slotNum;
+  uint32_t m_protocol;
   uint32_t algorithm;
   uint32_t minvalue;
   uint32_t value;
+  uint32_t m_tiMin;
+  uint32_t m_tiMax;
+  int m_authSlot;
     
   Ptr<DcaTxop> m_beaconDca;                  //!< Dedicated DcaTxop for beacons
   Time m_beaconInterval;                     //!< Interval between beacons

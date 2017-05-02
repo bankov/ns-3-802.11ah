@@ -245,13 +245,24 @@ private:
   EventId m_probeRequestEvent;
   EventId m_assocRequestEvent;
   EventId m_authRequestEvent;
+  EventId m_countBeaconEvent;
   EventId m_beaconWatchdog;
+  EventId m_countSlotEvent;
   Time m_beaconWatchdogEnd;
   uint32_t m_maxMissedBeacons;
   uint32_t m_aid;
   bool fasTAssocType;
   uint16_t fastAssocThreshold;
-    uint16_t assocVaule;
+  uint16_t assocVaule;
+  uint8_t m_minTI;
+  uint8_t m_maxTI;
+  uint8_t m_Tac;
+  uint8_t m_localTI;
+  uint64_t m_beaconsLeft;
+  uint64_t m_countingBeacons;
+  uint64_t m_beaconInterval;
+  uint64_t l;
+
   
   bool m_activeProbing;
   Ptr<DcaTxop> m_pspollDca;  //!< Dedicated DcaTxop for beacons

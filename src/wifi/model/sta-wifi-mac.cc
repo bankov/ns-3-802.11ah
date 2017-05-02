@@ -77,10 +77,10 @@ StaWifiMac::GetTypeId (void)
                    TimeValue (Seconds (0.5)),
                    MakeTimeAccessor (&StaWifiMac::m_assocRequestTimeout),
                    MakeTimeChecker ())
-	.AddAttribute ("AuthRequestTimeout", "The interval between two consecutive auth request attempts.",
-	               TimeValue (Seconds (0.5)),
-	               MakeTimeAccessor (&StaWifiMac::m_authRequestTimeout),
-	               MakeTimeChecker ())
+    .AddAttribute ("AuthRequestTimeout", "The interval between two consecutive auth request attempts.",
+                   TimeValue (Seconds (0.5)),
+                   MakeTimeAccessor (&StaWifiMac::m_authRequestTimeout),
+                   MakeTimeChecker ())
     .AddAttribute ("RawDuration", "The duration of one RAW group.",
                    TimeValue (MicroSeconds (102400)),
                    MakeTimeAccessor (&StaWifiMac::GetRawDuration,
@@ -115,13 +115,15 @@ StaWifiMac::StaWifiMac ()
   : m_state (BEACON_MISSED),
     m_probeRequestEvent (),
     m_assocRequestEvent (),
-	m_authRequestEvent (),
+    m_authRequestEvent (),
+    m_countBeaconEvent (),
     m_beaconWatchdogEnd (Seconds (0.0))
 {
   NS_LOG_FUNCTION (this);
   m_rawStart = false;
   m_dataBuffered = false;
   m_aid = 8192;
+  l = 0;
   uint32_t cwmin = 15;
   uint32_t cwmax = 1023;
   m_pspollDca = CreateObject<DcaTxop> ();
@@ -135,7 +137,11 @@ StaWifiMac::StaWifiMac ()
   fastAssocThreshold = 0; // allow some station to associate at the begining
     Ptr<UniformRandomVariable> m_rv = CreateObject<UniformRandomVariable> ();
     assocVaule = m_rv->GetValue (0, 1022);
-
+  m_minTI = 3;
+  m_maxTI = 10;
+  m_Tac = 4;
+  m_localTI = 0;
+  m_countingBeacons = 0;
   //Let the lower layers know that we are acting as a non-AP STA in
   //an infrastructure BSS.
   SetTypeOfStation (STA);
@@ -458,10 +464,13 @@ StaWifiMac::SendAuthenticationRequest (void)
   NS_LOG_FUNCTION (this << GetBssid ());
   if (!m_s1gSupported)
     {
-        fastAssocThreshold = 1023;
+      fastAssocThreshold = 1023;
     }
-
-  if (assocVaule < fastAssocThreshold)
+  if (fasTAssocType == 1)
+    {
+      m_countingBeacons = 0;
+    }
+  if (assocVaule < fastAssocThreshold || fasTAssocType == 1)
     {
       SetState (WAIT_AUTH_RESP);
       WifiMacHeader hdr;
@@ -581,8 +590,23 @@ void
 StaWifiMac::AuthRequestTimeout (void)
 {
   NS_LOG_FUNCTION (this);
-  SetState (WAIT_AUTH_RESP);
-  SendAuthenticationRequest ();
+  if (fasTAssocType == 0)
+    {
+      SetState (WAIT_AUTH_RESP);
+      SendAuthenticationRequest ();
+    }
+  else
+    {
+      SetState (BEACON_MISSED);
+      if (2 * m_localTI < m_maxTI)
+        {
+          m_localTI *= 2;
+        }
+      else
+        {
+          m_localTI = m_maxTI;
+        }
+    }
 }
 
 void
@@ -907,15 +931,54 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
             AuthenticationCtrl AuthenCtrl;
             AuthenCtrl = beacon.GetAuthCtrl ();
             fasTAssocType = AuthenCtrl.GetControlType ();
-            if (!fasTAssocType)  //only support centralized cnotrol
-             {
-               fastAssocThreshold = AuthenCtrl.GetThreshold();
-             }
+            if (!fasTAssocType)  //only support centralized control
+              {
+                fastAssocThreshold = AuthenCtrl.GetThreshold();
+              }
+            else
+              {
+                m_minTI = AuthenCtrl.GetMinInterval();
+                m_maxTI = AuthenCtrl.GetMaxInterval();
+                m_Tac = AuthenCtrl.GetSlotDuration();
+                m_beaconInterval = beacon.GetBeaconCompatibility().GetBeaconInterval ();
+                if (m_localTI == 0)
+                  {
+                    m_localTI = m_minTI;
+                  }
+              }
      }
     if (goodBeacon && m_state == BEACON_MISSED)
-     {
-        SendAuthenticationRequest ();
-     }
+      {
+        if (fasTAssocType == 0)
+          {
+            SendAuthenticationRequest ();
+          }
+        else
+          {
+            if (m_countingBeacons == 0)
+              {
+                uint64_t L = 1;
+                uint64_t tac = 1024 * m_Tac;
+                L = m_beaconInterval / tac;
+                Ptr<UniformRandomVariable> m_rv = CreateObject<UniformRandomVariable> ();
+                m_beaconsLeft = m_rv->GetValue (0, m_localTI);
+                Ptr<UniformRandomVariable> m_r = CreateObject<UniformRandomVariable> ();
+                l = m_r->GetValue (0, L);
+                m_countingBeacons = 1;
+              }
+            else
+              {
+                if (m_beaconsLeft > 0)
+                  {
+                    m_beaconsLeft--;
+                  }
+                if (m_beaconsLeft == 0)
+                  {
+                    m_countSlotEvent = Simulator::Schedule (MicroSeconds(l * 1024 * m_Tac), &StaWifiMac::SendAuthenticationRequest, this);
+                  }
+              }
+          }
+      }
     S1gBeaconReceived ();
     return;
    }
@@ -1032,6 +1095,7 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
             }
           if (authResp.GetStatusCode ().IsSuccess ())
             {
+              m_localTI = 0;
               SetState (WAIT_ASSOC_RESP);
               NS_LOG_DEBUG ("auth completed");
               SendAssociationRequest ();
