@@ -111,6 +111,7 @@ public:
 
 
 private:
+
   virtual void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
   /**
    * The packet we sent was successfully received by the receiver
@@ -211,11 +212,16 @@ private:
   void SetSlotCrossBoundary (uint32_t cross);
   void SetSlotDurationCount (uint32_t count);
   void SetSlotNum (uint32_t count);
+  void SetAlgorithm (uint32_t alg);
+  void SetValue (uint32_t val);
+  void SetMinValue (uint32_t minval);
   uint32_t GetSlotFormat (void) const;
   uint32_t GetSlotCrossBoundary (void) const;
   uint32_t GetSlotDurationCount (void) const;
   uint32_t GetSlotNum (void) const;
-    
+  uint32_t GetAlgorithm (void) const;
+  uint32_t GetValue (void) const;
+  uint32_t GetMinValue (void) const;
     
     
   void SetTotalStaNum (uint32_t num);
@@ -231,6 +237,9 @@ private:
   uint32_t m_slotCrossBoundary;
   uint32_t m_slotDurationCount;
   uint32_t  m_slotNum;
+  uint32_t algorithm;
+  uint32_t minvalue;
+  uint32_t value;
     
   Ptr<DcaTxop> m_beaconDca;                  //!< Dedicated DcaTxop for beacons
   Time m_beaconInterval;                     //!< Interval between beacons

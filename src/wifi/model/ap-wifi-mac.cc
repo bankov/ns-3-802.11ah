@@ -101,6 +101,21 @@ ApWifiMac::GetTypeId (void)
                    UintegerValue (2),
                    MakeUintegerAccessor (&ApWifiMac::GetSlotNum,
                                          &ApWifiMac::SetSlotNum),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("Algorithm", "choice of algorithm of connection of stations",
+                   UintegerValue (3),
+                   MakeUintegerAccessor (&ApWifiMac::GetAlgorithm,
+                                         &ApWifiMac::SetAlgorithm),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("Value", "Delta for algorithm",
+                   UintegerValue (60),
+                   MakeUintegerAccessor (&ApWifiMac::GetValue,
+                                         &ApWifiMac::SetValue),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("MinValue", "the minimum connected station",
+                   UintegerValue (2),
+                   MakeUintegerAccessor (&ApWifiMac::GetMinValue,
+                                         &ApWifiMac::SetMinValue),
                    MakeUintegerChecker<uint32_t> ());
   return tid;
 }
@@ -215,6 +230,25 @@ ApWifiMac::GetSlotNum (void) const
 {
     return m_slotNum;
 }
+
+uint32_t
+ApWifiMac::GetAlgorithm (void) const
+{
+    return algorithm;
+}
+
+uint32_t
+ApWifiMac::GetValue (void) const
+{
+    return value;
+}
+
+uint32_t
+ApWifiMac::GetMinValue (void) const
+{
+    return minvalue;
+}
+
     
 
 void
@@ -288,6 +322,25 @@ ApWifiMac::SetSlotNum (uint32_t count)
 {
     NS_ASSERT((!m_SlotFormat & (count < 64)) || (m_SlotFormat & (count < 8)));
     m_slotNum = count;
+}
+
+void
+ApWifiMac::SetAlgorithm (uint32_t alg)
+{
+    NS_ASSERT((alg==0)||(alg==1)||(alg==2)||(alg==3)||(alg==4)||(alg==5)||(alg==6));
+    algorithm = alg;
+}
+
+void
+ApWifiMac::SetValue (uint32_t val)
+{
+	value = val;
+}
+
+void
+ApWifiMac::SetMinValue (uint32_t minval)
+{
+    minvalue = minval;
 }
 
 
