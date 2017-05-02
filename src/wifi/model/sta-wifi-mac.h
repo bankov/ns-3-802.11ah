@@ -76,6 +76,13 @@ public:
   /**
    * \param timeout
    *
+   * If no authentication response is received within the specified
+   * timeout, the station sends a new authentication request.
+   */
+  void SetAuthRequestTimeout (Time timeout);
+  /**
+   * \param timeout
+   *
    * If no association response is received within the specified
    * timeout, the station sends a new association request.
    */
@@ -97,7 +104,8 @@ private:
     WAIT_PROBE_RESP,
     WAIT_ASSOC_RESP,
     BEACON_MISSED,
-    REFUSED
+    REFUSED,
+	WAIT_AUTH_RESP
   };
 
   /**
@@ -121,6 +129,11 @@ private:
    */
   void SendProbeRequest (void);
   /**
+   * Forward an authentication request packet to the DCF. The standard is not clear on the correct
+   * queue for management frames if QoS is supported. We always use the DCF.
+   */
+  void SendAuthenticationRequest (void);
+  /**
    * Forward an association request packet to the DCF. The standard is not clear on the correct
    * queue for management frames if QoS is supported. We always use the DCF.
    */
@@ -130,6 +143,11 @@ private:
    * depending on the current association status.
    */
   void TryToEnsureAssociated (void);
+  /**
+   * This method is called after the authentication timeout occurred. We switch the state to
+   * WAIT_AUTH_RESP and re-send an authentication request.
+   */
+  void AuthRequestTimeout (void);
   /**
    * This method is called after the association timeout occurred. We switch the state to
    * WAIT_ASSOC_RESP and re-send an association request.
@@ -223,8 +241,10 @@ private:
   enum MacState m_state;
   Time m_probeRequestTimeout;
   Time m_assocRequestTimeout;
+  Time m_authRequestTimeout;
   EventId m_probeRequestEvent;
   EventId m_assocRequestEvent;
+  EventId m_authRequestEvent;
   EventId m_beaconWatchdog;
   Time m_beaconWatchdogEnd;
   uint32_t m_maxMissedBeacons;

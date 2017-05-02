@@ -77,6 +77,10 @@ StaWifiMac::GetTypeId (void)
                    TimeValue (Seconds (0.5)),
                    MakeTimeAccessor (&StaWifiMac::m_assocRequestTimeout),
                    MakeTimeChecker ())
+	.AddAttribute ("AuthRequestTimeout", "The interval between two consecutive auth request attempts.",
+	               TimeValue (Seconds (0.5)),
+	               MakeTimeAccessor (&StaWifiMac::m_authRequestTimeout),
+	               MakeTimeChecker ())
     .AddAttribute ("RawDuration", "The duration of one RAW group.",
                    TimeValue (MicroSeconds (102400)),
                    MakeTimeAccessor (&StaWifiMac::GetRawDuration,
@@ -111,6 +115,7 @@ StaWifiMac::StaWifiMac ()
   : m_state (BEACON_MISSED),
     m_probeRequestEvent (),
     m_assocRequestEvent (),
+	m_authRequestEvent (),
     m_beaconWatchdogEnd (Seconds (0.0))
 {
   NS_LOG_FUNCTION (this);
@@ -219,6 +224,13 @@ StaWifiMac::SetProbeRequestTimeout (Time timeout)
 {
   NS_LOG_FUNCTION (this << timeout);
   m_probeRequestTimeout = timeout;
+}
+
+void
+StaWifiMac::SetAuthRequestTimeout (Time timeout)
+{
+  NS_LOG_FUNCTION (this << timeout);
+  m_authRequestTimeout = timeout;
 }
 
 void
@@ -441,7 +453,7 @@ StaWifiMac::SendProbeRequest (void)
 }
 
 void
-StaWifiMac::SendAssociationRequest (void)
+StaWifiMac::SendAuthenticationRequest (void)
 {
   NS_LOG_FUNCTION (this << GetBssid ());
   if (!m_s1gSupported)
@@ -449,8 +461,42 @@ StaWifiMac::SendAssociationRequest (void)
         fastAssocThreshold = 1023;
     }
 
-if (assocVaule < fastAssocThreshold)
-   {
+  if (assocVaule < fastAssocThreshold)
+    {
+      SetState (WAIT_AUTH_RESP);
+      WifiMacHeader hdr;
+      hdr.SetAuthFrame ();
+      hdr.SetAddr1 (GetBssid ());
+      hdr.SetAddr2 (GetAddress ());
+      hdr.SetAddr3 (GetBssid ());
+      hdr.SetDsNotFrom ();
+      hdr.SetDsNotTo ();
+      Ptr<Packet> packet = Create<Packet> ();
+      MgtAuthFrameHeader auth;
+      auth.SetAuthAlgorithmNumber (0);
+      auth.SetAuthTransactionSeqNumber (1);
+
+      packet->AddHeader (auth);
+
+      m_dca->Queue (packet, hdr);
+
+      if (m_authRequestEvent.IsRunning ())
+        {
+          m_authRequestEvent.Cancel ();
+        }
+      m_authRequestEvent = Simulator::Schedule (m_authRequestTimeout,
+                                       &StaWifiMac::AuthRequestTimeout, this);
+    }
+  else
+    {
+      SetState (BEACON_MISSED);
+    }
+}
+
+void
+StaWifiMac::SendAssociationRequest (void)
+{
+  NS_LOG_FUNCTION (this << GetBssid ());
       SetState (WAIT_ASSOC_RESP);
       WifiMacHeader hdr;
       hdr.SetAssocReq ();
@@ -483,11 +529,6 @@ if (assocVaule < fastAssocThreshold)
          }
       m_assocRequestEvent = Simulator::Schedule (m_assocRequestTimeout,
                                        &StaWifiMac::AssocRequestTimeout, this);
-   }
-else
-   {
-	  SetState (BEACON_MISSED);
-   }
 }
 
 void
@@ -531,7 +572,17 @@ StaWifiMac::TryToEnsureAssociated (void)
          association with a given ssid.
        */
       break;
+    case WAIT_AUTH_RESP:
+      break;
     }
+}
+
+void
+StaWifiMac::AuthRequestTimeout (void)
+{
+  NS_LOG_FUNCTION (this);
+  SetState (WAIT_AUTH_RESP);
+  SendAuthenticationRequest ();
 }
 
 void
@@ -758,8 +809,8 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
         }
       if (goodBeacon && m_state == BEACON_MISSED)
         {
-          SetState (WAIT_ASSOC_RESP);
-          SendAssociationRequest ();
+          SetState (WAIT_AUTH_RESP);
+          SendAuthenticationRequest ();
         }
       return;
     }
@@ -861,7 +912,7 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
      }
     if (goodBeacon && m_state == BEACON_MISSED)
      {
-        SendAssociationRequest ();
+        SendAuthenticationRequest ();
      }
     S1gBeaconReceived ();
     return;
@@ -893,8 +944,8 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
             {
               m_probeRequestEvent.Cancel ();
             }
-          SetState (WAIT_ASSOC_RESP);
-          SendAssociationRequest ();
+          SetState (WAIT_AUTH_RESP);
+          SendAuthenticationRequest ();
         }
       return;
     }
@@ -950,9 +1001,42 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
                   m_linkUp ();
                 }
             }
+          else if ((assocResp.GetStatusCode ().IsFailurewith17())||(assocResp.GetStatusCode ().IsFailurewith30())||(assocResp.GetStatusCode ().IsFailurewith34()))
+		    {
+              if (m_assocRequestEvent.IsRunning ())
+                 {
+            	    m_assocRequestEvent.Cancel ();
+                 }
+        	  m_assocRequestEvent = Simulator::Schedule (Seconds (2),
+        	                                         &StaWifiMac::AssocRequestTimeout, this);
+		    }
           else
             {
               NS_LOG_DEBUG ("assoc refused");
+              SetState (REFUSED);
+            }
+        }
+      return;
+    }
+  else if (hdr->IsAuthentication ())
+    {
+      if (m_state == WAIT_AUTH_RESP)
+        {
+          MgtAuthFrameHeader authResp;
+          packet->RemoveHeader (authResp);
+          if (m_authRequestEvent.IsRunning ())
+            {
+              m_authRequestEvent.Cancel ();
+            }
+          if (authResp.GetStatusCode ().IsSuccess ())
+            {
+              SetState (WAIT_ASSOC_RESP);
+              NS_LOG_DEBUG ("auth completed");
+              SendAssociationRequest ();
+            }
+          else
+            {
+              NS_LOG_DEBUG ("auth refused");
               SetState (REFUSED);
             }
         }

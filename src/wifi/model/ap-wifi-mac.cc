@@ -589,6 +589,38 @@ ApWifiMac::SendProbeResp (Mac48Address to)
 }
 
 void
+ApWifiMac::SendAuthResp (Mac48Address to, bool success)
+{
+  NS_LOG_FUNCTION (this << to << success);
+  WifiMacHeader hdr;
+  hdr.SetAuthFrame ();
+  hdr.SetAddr1 (to);
+  hdr.SetAddr2 (GetAddress ());
+  hdr.SetAddr3 (GetAddress ());
+  hdr.SetDsNotFrom ();
+  hdr.SetDsNotTo ();
+  Ptr<Packet> packet = Create<Packet> ();
+  MgtAuthFrameHeader auth;
+
+  StatusCode code;
+  if (success)
+    {
+      code.SetSuccess ();
+    }
+  else
+    {
+      code.SetFailure ();
+    }
+  auth.SetAuthAlgorithmNumber (0);
+  auth.SetAuthTransactionSeqNumber (2);
+  auth.SetStatusCode (code);
+
+  packet->AddHeader (auth);
+
+  m_dca->Queue (packet, hdr);
+}
+
+void
 ApWifiMac::SendAssocResp (Mac48Address to, bool success)
 {
   NS_LOG_FUNCTION (this << to << success);
@@ -1102,6 +1134,14 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
           else if (hdr->IsDisassociation ())
             {
               m_stationManager->RecordDisassociated (from);
+              return;
+            }
+          else if (hdr->IsAuthentication ())
+            {
+              MgtAuthFrameHeader auth;
+              packet->RemoveHeader (auth);
+
+              SendAuthResp (hdr->GetAddr2 (), true);
               return;
             }
         }

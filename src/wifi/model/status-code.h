@@ -50,6 +50,9 @@ public:
    *         false otherwise
    */
   bool IsSuccess (void) const;
+  bool IsFailurewith17 (void) const;
+  bool IsFailurewith30 (void) const;
+  bool IsFailurewith34 (void) const;
 
   /**
    * \returns the expected size of the status code.

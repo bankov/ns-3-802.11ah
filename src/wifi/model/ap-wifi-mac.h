@@ -178,6 +178,14 @@ private:
    */
   void SendProbeResp (Mac48Address to);
   /**
+   * Forward an authentication response packet to the DCF. The standard is not clear on the correct
+   * queue for management frames if QoS is supported. We always use the DCF.
+   *
+   * \param to the address of the STA we are sending an authentication response to
+   * \param success indicates whether the association was successful or not
+   */
+  void SendAuthResp (Mac48Address to, bool success);
+  /**
    * Forward an association response packet to the DCF. The standard is not clear on the correct
    * queue for management frames if QoS is supported. We always use the DCF.
    *

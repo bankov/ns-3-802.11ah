@@ -578,7 +578,7 @@ RegularWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
           return;
         }
     }
-  NS_FATAL_ERROR ("Don't know how to handle frame (type=" << hdr->GetType ());
+  NS_FATAL_ERROR ("Don't know how to handle frame type=" << hdr->GetType ());
 }
 
 void

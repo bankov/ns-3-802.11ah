@@ -46,6 +46,24 @@ StatusCode::IsSuccess (void) const
   return (m_code == 0);
 }
 
+bool
+StatusCode::IsFailurewith17 (void) const
+{
+  return (m_code == 17);
+}
+
+bool
+StatusCode::IsFailurewith30 (void) const
+{
+  return (m_code == 30);
+}
+
+bool
+StatusCode::IsFailurewith34 (void) const
+{
+  return (m_code == 34);
+}
+
 uint32_t
 StatusCode::GetSerializedSize (void) const
 {
