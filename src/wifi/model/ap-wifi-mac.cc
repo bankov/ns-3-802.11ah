@@ -116,6 +116,11 @@ ApWifiMac::GetTypeId (void)
                    UintegerValue (2),
                    MakeUintegerAccessor (&ApWifiMac::GetMinValue,
                                          &ApWifiMac::SetMinValue),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("NAssociating", "Number of associating STAs",
+                   UintegerValue (100),
+                   MakeUintegerAccessor (&ApWifiMac::GetNAssociating,
+                                         &ApWifiMac::SetNAssociating),
                    MakeUintegerChecker<uint32_t> ());
   return tid;
 }
@@ -136,6 +141,8 @@ ApWifiMac::ApWifiMac ()
 
   m_enableBeaconGeneration = false;
   AuthenThreshold = 0;
+  m_saturatedAssociated = false;
+  m_associatingStasAppear = false;
   //m_SlotFormat = 0;
 }
 
@@ -251,6 +258,12 @@ ApWifiMac::GetMinValue (void) const
 
     
 
+uint32_t
+ApWifiMac::GetNAssociating (void) const
+{
+  return m_nAssociating;
+}
+
 void
 ApWifiMac::SetWifiRemoteStationManager (Ptr<WifiRemoteStationManager> stationManager)
 {
@@ -343,6 +356,24 @@ ApWifiMac::SetMinValue (uint32_t minval)
     minvalue = minval;
 }
 
+
+void
+ApWifiMac::SetNAssociating (uint32_t num)
+{
+  m_nAssociating = num;
+}
+
+void
+ApWifiMac::SetSaturatedAssociated (void)
+{
+  m_saturatedAssociated = true;
+}
+
+void
+ApWifiMac::SetAssociatingStasAppear (void)
+{
+  m_associatingStasAppear = true;
+}
 
 void
 ApWifiMac::StartBeaconing (void)
@@ -656,6 +687,23 @@ ApWifiMac::SendOneBeacon (void)
                {
                  AuthenThreshold -= value;
                }
+            }
+        }
+
+      if (algorithm == 5)
+        {
+          if (!m_saturatedAssociated)
+            {
+              AuthenThreshold = 1023;
+            }
+          else if (m_associatingStasAppear)
+            {
+              AuthenThreshold = 1023 * value / m_nAssociating;
+              m_associatingStasAppear = 0;
+            }
+          else if (MgtQueueSize == 0)
+            {
+              AuthenThreshold += 1023 * value / m_nAssociating;
             }
         }
 

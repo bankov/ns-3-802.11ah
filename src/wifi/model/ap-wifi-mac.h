@@ -97,6 +97,8 @@ public:
    * Start beacon transmission immediately.
    */
   void StartBeaconing (void);
+  void SetSaturatedAssociated (void);
+  void SetAssociatingStasAppear (void);
 
   /**
    * Assign a fixed random variable stream number to the random variables
@@ -215,6 +217,7 @@ private:
   void SetAlgorithm (uint32_t alg);
   void SetValue (uint32_t val);
   void SetMinValue (uint32_t minval);
+  void SetNAssociating (uint32_t num);
   uint32_t GetSlotFormat (void) const;
   uint32_t GetSlotCrossBoundary (void) const;
   uint32_t GetSlotDurationCount (void) const;
@@ -222,6 +225,7 @@ private:
   uint32_t GetAlgorithm (void) const;
   uint32_t GetValue (void) const;
   uint32_t GetMinValue (void) const;
+  uint32_t GetNAssociating (void) const;
     
     
   void SetTotalStaNum (uint32_t num);
@@ -247,6 +251,9 @@ private:
   EventId m_beaconEvent;                     //!< Event to generate one beacon
   Ptr<UniformRandomVariable> m_beaconJitter; //!< UniformRandomVariable used to randomize the time of the first beacon
   bool m_enableBeaconJitter;                 //!< Flag if the first beacon should be generated at random time
+  bool m_saturatedAssociated;
+  bool m_associatingStasAppear;
+  uint32_t m_nAssociating;
 };
 
 } //namespace ns3
