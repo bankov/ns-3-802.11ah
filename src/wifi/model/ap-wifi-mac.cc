@@ -1055,6 +1055,20 @@ ApWifiMac::SendOneBeacon (void)
 
   m_summ = m_summ + m_counterSuccessLast;
   m_counterSuccessLast = m_counterSuccessNew;
+
+  std::cout << Simulator::Now ().GetSeconds ()
+            << "\tcounterSuccessNew " << m_counterSuccessNew
+            << "\tauthenticate " << m_counterAuthSuccessNew
+            << "\tSumm " << m_summ
+            << "\tporog " << AuthenThreshold
+            << "\tdelta " << m_delta
+            << "\tQueue " << m_dca->GetQueue ()->GetSize ()
+            << "\tassoc " <<  m-t
+            << "\tauth "<< z - y
+            << "\tstate "<< m_cac_state
+            << "\timprove "<< m_cac_improve
+            << "\tcounter "<< m_cac_counter << std::endl;
+
   m_counterSuccessNew = 0;
   m_counterAuthSuccessNew = 0;
   t = m;
