@@ -643,19 +643,20 @@ ApWifiMac::SendOneBeacon (void)
       AuthenCtrl.SetControlType (false); //centralized
       Ptr<WifiMacQueue> MgtQueue = m_dca->GetQueue ();
       uint32_t MgtQueueSize= MgtQueue->GetSize ();
-      if  (MgtQueueSize < 10 )
+
+      if (algorithm == 0)
         {
-          if (AuthenThreshold <= 950)
-           {
-             AuthenThreshold += 50;
-           }
-        }
-      else
-        {
-          if (AuthenThreshold > 50)
-           {
-               AuthenThreshold -=50;
-           }
+          if (MgtQueueSize < 10)
+            {
+              AuthenThreshold += value;
+            }
+          else
+            {
+              if (AuthenThreshold > value)
+               {
+                 AuthenThreshold -= value;
+               }
+            }
         }
 
 	  if (AuthenThreshold>=1023)
