@@ -114,6 +114,13 @@ public:
 
 private:
 
+  enum CAC_STATES
+  {
+    WAIT,
+    LEARN,
+    WORK
+  } m_cac_state;
+
   virtual void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
   /**
    * The packet we sent was successfully received by the receiver
@@ -254,6 +261,11 @@ private:
   bool m_saturatedAssociated;
   bool m_associatingStasAppear;
   uint32_t m_nAssociating;
+
+  int m_cac_counter;                         //number of beacon intervals before move to waiting mode after working mode with threshold=1023
+  bool m_cac_improve;
+  int m_delta;
+  int m_queueLast;
 };
 
 } //namespace ns3

@@ -143,6 +143,12 @@ ApWifiMac::ApWifiMac ()
   AuthenThreshold = 0;
   m_saturatedAssociated = false;
   m_associatingStasAppear = false;
+
+  m_queueLast = 0;
+  m_delta = 1;
+  m_cac_state = WAIT;
+  m_cac_counter = 5;
+
   //m_SlotFormat = 0;
 }
 
@@ -633,6 +639,8 @@ ApWifiMac::SendOneBeacon (void)
 {
   NS_LOG_FUNCTION (this);
   WifiMacHeader hdr;
+
+  uint32_t q;
     if (m_s1gSupported)
      {
       hdr.SetS1gBeacon ();
@@ -674,6 +682,7 @@ ApWifiMac::SendOneBeacon (void)
       AuthenCtrl.SetControlType (false); //centralized
       Ptr<WifiMacQueue> MgtQueue = m_dca->GetQueue ();
       uint32_t MgtQueueSize= MgtQueue->GetSize ();
+      q = MgtQueueSize;
 
       if (algorithm == 0)
         {
@@ -745,6 +754,8 @@ ApWifiMac::SendOneBeacon (void)
       m_beaconDca->Queue (packet, hdr);
       }
   m_beaconEvent = Simulator::Schedule (m_beaconInterval, &ApWifiMac::SendOneBeacon, this);
+
+  m_queueLast = q;
 }
 
 void
