@@ -1030,10 +1030,6 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
         {
           if (hdr->IsAssocReq ())
             {
-              if (m_stationManager->IsAssociated (from))
-                {
-                  return;  //test, avoid repeate assoc
-                 }
                //NS_LOG_LOGIC ("Received AssocReq "); // for test
               //first, verify that the the station's supported
               //rate set is compatible with our Basic Rate set
